@@ -41,7 +41,7 @@ protected:
 protected slots:
     void refreshPic();
     void refreshRect(QImage *dest, Mat *frame);
-    void updateMovingLogic();
+    void updateMovingLogic(int x, int y);
     
 private:
     void refreshValues(int arr[]);

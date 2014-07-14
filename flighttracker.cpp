@@ -94,7 +94,6 @@ void FlightTracker::refreshPic() {
         this -> resize(800, 600);
         det -> refreshCap();
     }
-    updateMovingLogic();
 }
 
 QImage FlightTracker::cvMatToQImage( const cv::Mat &inMat )
@@ -138,7 +137,7 @@ QImage FlightTracker::cvMatToQImage( const cv::Mat &inMat )
 
 void FlightTracker::refreshRect(QImage *dest, Mat *frame) {
     
-    int* coordsArr;
+    int* coordsArr = NULL;
     
     painter = new QPainter(dest);
     redPen = new QPen((QColor(255,0,0)),1);
@@ -157,6 +156,36 @@ void FlightTracker::refreshRect(QImage *dest, Mat *frame) {
     painter -> drawLine(coordsArr[2], coordsArr[3], coordsArr[4], coordsArr[5]);
     painter -> drawLine(coordsArr[4], coordsArr[5], coordsArr[6], coordsArr[7]);
     painter -> drawLine(coordsArr[6], coordsArr[7], coordsArr[0], coordsArr[1]);
+    
+    int centerArr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    
+    centerArr[0] = abs(coordsArr[4] - coordsArr[0]) / 2;
+    centerArr[1] = abs(coordsArr[5] - coordsArr[1]) / 2;
+    
+    //painter -> drawLine(coordsArr[0], coordsArr[1], coordsArr[0] + centerArr[0], coordsArr[1] + centerArr[1]);
+    
+    int minValX = coordsArr[0];
+    int i = 0;
+    for (i = 2; i < 8; i += 2) {
+        if (coordsArr[i] < minValX) {
+            minValX = coordsArr[i];
+        }
+    }
+    
+    int minValY = coordsArr[1];
+    int j = 0;
+    for (int j = 1; j < 8; j += 2) {
+        if (coordsArr[j] < minValY) {
+            minValY = coordsArr[j];
+        }
+    }
+    
+    painter -> drawEllipse(minValX + centerArr[0] - 8, minValY + centerArr[1] - 8, 20, 20);
+    
+    updateMovingLogic(minValX + centerArr[0], minValX + centerArr[1]);
+    
+    //painter -> drawLine(minValX, minValY, minValX + centerArr[0], minValY + centerArr[1]);
+    
     painter -> end();
 }
 
@@ -178,7 +207,7 @@ void FlightTracker::refreshValues(int arr[]) {
  * int[2] = movX
  * int[3] = movY
  */
-void FlightTracker::updateMovingLogic() {
+void FlightTracker::updateMovingLogic(int x, int y) {
     int finalArr[] = {0, 0, 0, 0};
     
     /* Here is moving logic code */

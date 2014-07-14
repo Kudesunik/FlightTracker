@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'flighttracker.h'
 **
-** Created: Mon Jul 14 09:32:52 2014
+** Created: Mon Jul 14 11:46:32 2014
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -33,14 +33,15 @@ static const uint qt_meta_data_FlightTracker[] = {
  // slots: signature, parameters, type, tag, flags
       15,   14,   14,   14, 0x09,
       39,   28,   14,   14, 0x09,
-      65,   14,   14,   14, 0x09,
+      69,   65,   14,   14, 0x09,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_FlightTracker[] = {
     "FlightTracker\0\0refreshPic()\0dest,frame\0"
-    "refreshRect(QImage*,Mat*)\0updateMovingLogic()\0"
+    "refreshRect(QImage*,Mat*)\0x,y\0"
+    "updateMovingLogic(int,int)\0"
 };
 
 void FlightTracker::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -51,7 +52,7 @@ void FlightTracker::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _i
         switch (_id) {
         case 0: _t->refreshPic(); break;
         case 1: _t->refreshRect((*reinterpret_cast< QImage*(*)>(_a[1])),(*reinterpret_cast< Mat*(*)>(_a[2]))); break;
-        case 2: _t->updateMovingLogic(); break;
+        case 2: _t->updateMovingLogic((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
         default: ;
         }
     }
