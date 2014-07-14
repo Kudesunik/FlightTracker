@@ -1,6 +1,7 @@
 #include <qt4/QtCore/qglobal.h>
 #include <qt4/QtGui/qlabel.h>
 #include <sstream>
+#include <opencv2/core/core.hpp>
 
 #include "flighttracker.h"
 #include "detector.h"
@@ -11,7 +12,10 @@ FlightTracker::FlightTracker() {
     setGUIElements();
     camTimer = new QTimer(this);
     connect(camTimer, SIGNAL(timeout()), this, SLOT(refreshPic()));
-    camTimer -> start(2000);
+    camTimer -> start(1000);
+    timeFlag = FALSE;
+    start = time(0);
+    frameFlag = 2;
 }
 
 void FlightTracker::setGUIElements() {
@@ -64,14 +68,23 @@ void FlightTracker::setGUIElements() {
 }
 
 void FlightTracker::refreshPic() {
+    
+    double fps = det -> cap -> get(CV_CAP_PROP_FPS);
+    camTimer -> setInterval(fps);
+    
     Mat frame;
     if (det -> cap -> isOpened()) {
         det -> cap -> read(frame);
-        Mat temp;
-        cvtColor(frame, temp,CV_BGR2RGB);
-        QImage dest((const uchar *) temp.data, temp.cols, temp.rows, temp.step, QImage::Format_RGB888);
-        dest.bits();
-        refreshRect(&dest);
+        
+        QImage dest = cvMatToQImage(frame);
+        
+        if (timeFlag) {
+                refreshRect(&dest, &frame);
+        }
+        else if (difftime(time(0), start) > 10) {
+                timeFlag = TRUE;
+        }
+        
         QPixmap img = QPixmap::fromImage(dest);
         i_label -> setPixmap(img);
         this -> resize((det -> dWidth) + 200, (det -> dHeight));
@@ -80,20 +93,70 @@ void FlightTracker::refreshPic() {
         i_label -> setPixmap(*pixmap);
         this -> resize(800, 600);
         det -> refreshCap();
-        if (det -> cap -> isOpened()) {
-            camTimer -> setInterval(det -> cap -> get(CV_CAP_PROP_FPS));
-        }
     }
     updateMovingLogic();
 }
 
-void FlightTracker::refreshRect(QImage *dest) {
+QImage FlightTracker::cvMatToQImage( const cv::Mat &inMat )
+   {
+      switch ( inMat.type() )
+      {
+         case CV_8UC4:
+         {
+            QImage image( inMat.data, inMat.cols, inMat.rows, inMat.step, QImage::Format_RGB32 );
+            return image;
+         }
+ 
+         case CV_8UC3:
+         {
+            QImage image( inMat.data, inMat.cols, inMat.rows, inMat.step, QImage::Format_RGB888 );
+            return image.rgbSwapped();
+         }
+ 
+         case CV_8UC1:
+         {
+            static QVector<QRgb>  sColorTable;
+ 
+            if ( sColorTable.isEmpty() )
+            {
+               for ( int i = 0; i < 256; ++i )
+                  sColorTable.push_back(qRgb( i, i, i ));
+            }
+ 
+            QImage image( inMat.data, inMat.cols, inMat.rows, inMat.step, QImage::Format_Indexed8 );
+ 
+            image.setColorTable( sColorTable );
+            return image;
+         }
+ 
+         default:
+            break;
+      }
+ 
+      return QImage();
+   }
+
+void FlightTracker::refreshRect(QImage *dest, Mat *frame) {
+    
+    int* coordsArr;
+    
     painter = new QPainter(dest);
     redPen = new QPen((QColor(255,0,0)),1);
     redPen -> setWidth(2);
     painter -> setPen(*redPen);
-    int* arr = (det -> getQuadCoords());
-    painter -> drawRect(arr[0], arr[1], arr[2], arr[3]);
+    
+    if (frameFlag >= 0) {
+        coordsArr = (det -> detectObject(frame));
+        frameFlag = 0;
+    }
+    else {
+        frameFlag++;
+    }
+    
+    painter -> drawLine(coordsArr[0], coordsArr[1], coordsArr[2], coordsArr[3]);
+    painter -> drawLine(coordsArr[2], coordsArr[3], coordsArr[4], coordsArr[5]);
+    painter -> drawLine(coordsArr[4], coordsArr[5], coordsArr[6], coordsArr[7]);
+    painter -> drawLine(coordsArr[6], coordsArr[7], coordsArr[0], coordsArr[1]);
     painter -> end();
 }
 

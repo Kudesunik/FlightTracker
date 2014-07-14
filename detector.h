@@ -4,6 +4,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/nonfree/features2d.hpp>
+#include <vector>
 
 using namespace std;
 using namespace cv;
@@ -15,11 +17,13 @@ public:
     
     VideoCapture *cap;
     
-    int* getQuadCoords();
     void refreshCap();
+    int* detectObject(Mat *frm);
     
     double dWidth;
     double dHeight;
+    
+    Mat img_object;
     
 };
 

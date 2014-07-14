@@ -12,6 +12,12 @@
 #include <QPixmap>
 #include <QPen>
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/nonfree/features2d.hpp>
+
+using namespace cv;
 using namespace std;
 
 class FlightTracker : public QWidget {
@@ -34,7 +40,7 @@ protected:
             
 protected slots:
     void refreshPic();
-    void refreshRect(QImage *dest);
+    void refreshRect(QImage *dest, Mat *frame);
     void updateMovingLogic();
     
 private:
@@ -47,8 +53,11 @@ private:
     QGridLayout *gridLayout;
     QFormLayout *formLayout;
     QPen *redPen;
-    
+    QImage cvMatToQImage( const cv::Mat &inMat );
     QTimer *camTimer;
+    time_t start;
+    bool timeFlag;
+    int frameFlag;
     
 };
 
