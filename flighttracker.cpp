@@ -16,6 +16,8 @@ FlightTracker::FlightTracker() {
     timeFlag = FALSE;
     start = time(0);
     frameFlag = 2;
+    midX = det -> dWidth; 
+    midY = det -> dHeight;
 }
 
 void FlightTracker::setGUIElements() {
@@ -70,7 +72,7 @@ void FlightTracker::setGUIElements() {
 void FlightTracker::refreshPic() {
     
     double fps = det -> cap -> get(CV_CAP_PROP_FPS);
-    camTimer -> setInterval(fps);
+    camTimer -> setInterval(100);
     
     Mat frame;
     if (det -> cap -> isOpened()) {
@@ -81,7 +83,7 @@ void FlightTracker::refreshPic() {
         if (timeFlag) {
                 refreshRect(&dest, &frame);
         }
-        else if (difftime(time(0), start) > 10) {
+        else if (difftime(time(0), start) > 5) {
                 timeFlag = TRUE;
         }
         
@@ -145,7 +147,7 @@ void FlightTracker::refreshRect(QImage *dest, Mat *frame) {
     painter -> setPen(*redPen);
     
     if (frameFlag >= 0) {
-        coordsArr = (det -> detectObject(frame));
+        coordsArr = (det -> detectObject(frame, midX, midY));
         frameFlag = 0;
     }
     else {
@@ -157,34 +159,22 @@ void FlightTracker::refreshRect(QImage *dest, Mat *frame) {
     painter -> drawLine(coordsArr[4], coordsArr[5], coordsArr[6], coordsArr[7]);
     painter -> drawLine(coordsArr[6], coordsArr[7], coordsArr[0], coordsArr[1]);
     
-    int centerArr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    
-    centerArr[0] = abs(coordsArr[4] - coordsArr[0]) / 2;
-    centerArr[1] = abs(coordsArr[5] - coordsArr[1]) / 2;
-    
-    //painter -> drawLine(coordsArr[0], coordsArr[1], coordsArr[0] + centerArr[0], coordsArr[1] + centerArr[1]);
-    
-    int minValX = coordsArr[0];
-    int i = 0;
-    for (i = 2; i < 8; i += 2) {
-        if (coordsArr[i] < minValX) {
-            minValX = coordsArr[i];
-        }
+    int iter1 = 0;
+    midX = coordsArr[0];
+    for (iter1 = 2; iter1 < 8; iter1 += 2) {
+        midX += coordsArr[iter1];
     }
+    midX /= 4;
     
-    int minValY = coordsArr[1];
-    int j = 0;
-    for (int j = 1; j < 8; j += 2) {
-        if (coordsArr[j] < minValY) {
-            minValY = coordsArr[j];
-        }
+    midY = coordsArr[1];
+    for (iter1 = 3; iter1 < 8; iter1 += 2) {
+        midY += coordsArr[iter1];
     }
+    midY /= 4;
     
-    painter -> drawEllipse(minValX + centerArr[0] - 8, minValY + centerArr[1] - 8, 20, 20);
+    painter -> drawEllipse(midX, midY, 20, 20);
     
-    updateMovingLogic(minValX + centerArr[0], minValX + centerArr[1]);
-    
-    //painter -> drawLine(minValX, minValY, minValX + centerArr[0], minValY + centerArr[1]);
+    updateMovingLogic(midX, midY);
     
     painter -> end();
 }
@@ -201,18 +191,16 @@ void FlightTracker::refreshValues(int arr[]) {
     movY -> setText(str.str().c_str());
 }
 
-/**
- * int[0] = dX
- * int[1] = dY
- * int[2] = movX
- * int[3] = movY
- */
 void FlightTracker::updateMovingLogic(int x, int y) {
     int finalArr[] = {0, 0, 0, 0};
     
-    /* Here is moving logic code */
+    finalArr[0] = x - bufMidX;
+    finalArr[1] = y - bufMidY;
+    finalArr[2] = (det -> dWidth)/2 - x;
+    finalArr[3] = (det -> dHeight)/2 - y;
     
-    /* End of moving logic code */
+    bufMidX = x;
+    bufMidY = y;
     
     if (finalArr[0] != 0 || finalArr[1] != 0 || finalArr[2] != 0 || finalArr[3] != 0) {
         refreshValues(finalArr);

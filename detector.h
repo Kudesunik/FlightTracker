@@ -6,6 +6,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/nonfree/features2d.hpp>
 #include <vector>
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/nonfree/features2d.hpp>
+#include <opencv2/legacy/legacy.hpp>
 
 using namespace std;
 using namespace cv;
@@ -18,7 +21,7 @@ public:
     VideoCapture *cap;
     
     void refreshCap();
-    int* detectObject(Mat *frm);
+    int* detectObject(Mat *frm, int midXA, int midYA);
     
     double dWidth;
     double dHeight;

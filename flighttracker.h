@@ -34,6 +34,10 @@ public:
     QLabel *i_label;
     QPixmap *pixmap;
     QPainter *painter;
+    int midX;
+    int midY;
+    int bufMidX;
+    int bufMidY;
         
 protected:
     void setGUIElements();

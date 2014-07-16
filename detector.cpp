@@ -1,4 +1,10 @@
 #include "detector.h"
+#include "flighttracker.h"
+
+static int bufferArray[] = {1, 1, 300, 300};
+static int coordArray[] = {1, 1, 800, 1, 800, 800, 1, 800};
+static int check = 0;
+static bool optimizationFlag = false;
 
 Detector::Detector() {
     
@@ -12,6 +18,7 @@ Detector::Detector() {
 }
 
 void Detector::refreshCap() {
+    
     cap = new VideoCapture("http://192.168.0.37:8080/video?x.mjpeg");
     //cap = new VideoCapture("VIDEO0009.mp4");
     
@@ -19,24 +26,68 @@ void Detector::refreshCap() {
     dHeight = cap -> get(CV_CAP_PROP_FRAME_HEIGHT);
 }
 
-/**
- * coordArray[0] = start_x;
- * coordArray[1] = start_y;
- * coordArray[2] = width;
- * coordArray[3] = height;
- */
-int* Detector::detectObject(Mat *frm) {
-    
-    int coordArray[] = {0, 0, 0, 0, 0, 0, 0, 0};
+int* Detector::detectObject(Mat *frm, int midXA, int midYA) {
     
     Mat img_scene = *frm;
-
+    
     if( !img_object.data || !img_scene.data ) { 
         string message = " Ошибка чтения ";
+        return coordArray;
         cout << message << endl;
     }
+    
+    bufferArray[0] = midXA - 180;
+    bufferArray[1] = midYA - 180;
+    bufferArray[2] = midXA + 180;
+    bufferArray[3] = midYA + 180;
+    
+    if (bufferArray[0] <= 0) {
+        bufferArray[0] = 1;
+    }
+    if (bufferArray[1] <= 0) {
+        bufferArray[1] = 1;
+    }
+    if ((bufferArray[2] + bufferArray[0]) >= img_scene.cols) {
+        bufferArray[2] = img_scene.cols - bufferArray[0] - 1;
+    }
+    if ((bufferArray[3] + bufferArray[1]) >= img_scene.rows) {
+        bufferArray[3] = img_scene.rows - bufferArray[1] - 1;
+    }
+    
+    if (check == 10) {
         
-    int minHessian = 600;
+        coordArray[0] = 1;
+        coordArray[1] = 1;
+        coordArray[2] = img_scene.cols - 1;
+        coordArray[3] = 1;
+        coordArray[4] = img_scene.cols - 1;
+        coordArray[5] = img_scene.rows - 1;
+        coordArray[6] = 1;
+        coordArray[7] = img_scene.rows - 1;
+        
+        bufferArray[0] = 1;
+        bufferArray[1] = 1;
+        bufferArray[2] = img_scene.cols - 1;
+        bufferArray[3] = img_scene.rows - 1;
+        
+        check = 0;
+    }
+    
+    check++;
+    
+    if (!optimizationFlag) {
+        bufferArray[0] = 0;
+        bufferArray[1] = 0;
+        bufferArray[2] = 0;
+        bufferArray[3] = 0;
+    }
+    else {
+        img_scene = (*frm)(Rect(bufferArray[0], bufferArray[1], bufferArray[2], bufferArray[3]));
+    }
+    
+    imshow( "Good Matches & Object detection", img_scene );
+        
+    int minHessian = 800;
         
     SurfFeatureDetector detector(minHessian);
         
@@ -54,6 +105,15 @@ int* Detector::detectObject(Mat *frm) {
             
     FlannBasedMatcher matcher;
     vector< DMatch > matches;
+    
+    if (descriptors_object.empty()) {
+        return coordArray;
+    }
+    
+    if (descriptors_scene.empty()) {
+        return coordArray;
+    }
+    
     matcher.match( descriptors_object, descriptors_scene, matches );
 
     double max_dist = 0; double min_dist = 100;
@@ -66,7 +126,7 @@ int* Detector::detectObject(Mat *frm) {
     vector< DMatch > good_matches;
     
     for( int i = 0; i < descriptors_object.rows; i++ ) { 
-        if( matches[i].distance < 12 * min_dist ) { 
+        if( matches[i].distance < 6 * min_dist ) { 
             good_matches.push_back( matches[i]); 
         }
     }  
@@ -88,14 +148,23 @@ int* Detector::detectObject(Mat *frm) {
 
     perspectiveTransform( obj_corners, scene_corners, H);
     
-    coordArray[0] = static_cast<int>(scene_corners[0].x);
-    coordArray[1] = static_cast<int>(scene_corners[0].y);
-    coordArray[2] = static_cast<int>(scene_corners[1].x);
-    coordArray[3] = static_cast<int>(scene_corners[1].y);
-    coordArray[4] = static_cast<int>(scene_corners[2].x);
-    coordArray[5] = static_cast<int>(scene_corners[2].y);
-    coordArray[6] = static_cast<int>(scene_corners[3].x);
-    coordArray[7] = static_cast<int>(scene_corners[3].y);
+    int diagLengthX1 = abs(scene_corners[2].x - scene_corners[0].x);
+    int diagLengthY1 = abs(scene_corners[2].y - scene_corners[0].y);
+    int diagLengthX2 = abs(scene_corners[1].x - scene_corners[3].x);
+    int diagLengthY2 = abs(scene_corners[3].y - scene_corners[1].y);
+    
+    if (diagLengthX1 > 20 && diagLengthX2 > 20 && diagLengthY1 > 20 && diagLengthY2 > 20 &&
+         diagLengthX1 < 300 && diagLengthX2 < 300 && diagLengthY1 < 300 && diagLengthY2 < 300) {
+            coordArray[0] = static_cast<int>(scene_corners[0].x + bufferArray[0]);
+            coordArray[1] = static_cast<int>(scene_corners[0].y + bufferArray[1]);
+            coordArray[2] = static_cast<int>(scene_corners[1].x + bufferArray[0]);
+            coordArray[3] = static_cast<int>(scene_corners[1].y + + bufferArray[1]);
+            coordArray[4] = static_cast<int>(scene_corners[2].x + bufferArray[0]);
+            coordArray[5] = static_cast<int>(scene_corners[2].y + bufferArray[1]);
+            coordArray[6] = static_cast<int>(scene_corners[3].x + + bufferArray[0]);
+            coordArray[7] = static_cast<int>(scene_corners[3].y + + bufferArray[1]);
+            check = 0;
+    }
     
     return coordArray;
 }
