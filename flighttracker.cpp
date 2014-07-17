@@ -16,6 +16,8 @@ FlightTracker::FlightTracker() {
     timeFlag = FALSE;
     start = time(0);
     frameFlag = 2;
+    distX = 0;
+    distY = 0;
     midX = det -> dWidth; 
     midY = det -> dHeight;
 }
@@ -179,7 +181,7 @@ void FlightTracker::refreshRect(QImage *dest, Mat *frame) {
     painter -> end();
 }
 
-void FlightTracker::refreshValues(int arr[]) {
+void FlightTracker::refreshValues(float arr[]) {
     std::ostringstream str;
     str.str(""); str << arr[0];
     dX -> setText(str.str().c_str());
@@ -192,12 +194,14 @@ void FlightTracker::refreshValues(int arr[]) {
 }
 
 void FlightTracker::updateMovingLogic(int x, int y) {
-    int finalArr[] = {0, 0, 0, 0};
+    float finalArr[] = {0, 0, 0, 0};
     
     finalArr[0] = x - bufMidX;
     finalArr[1] = y - bufMidY;
     finalArr[2] = (det -> dWidth)/2 - x;
     finalArr[3] = (det -> dHeight)/2 - y;
+    
+    finalArr[2] *= 0.3; finalArr[3] *= 0.3;
     
     bufMidX = x;
     bufMidY = y;

@@ -38,6 +38,8 @@ public:
     int midY;
     int bufMidX;
     int bufMidY;
+    float distX;
+    float distY;
         
 protected:
     void setGUIElements();
@@ -48,7 +50,7 @@ protected slots:
     void updateMovingLogic(int x, int y);
     
 private:
-    void refreshValues(int arr[]);
+    void refreshValues(float arr[]);
     QLabel *camLabel;
     QLabel *dXLabel;
     QLabel *dYLabel;

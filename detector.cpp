@@ -4,7 +4,7 @@
 static int bufferArray[] = {1, 1, 300, 300};
 static int coordArray[] = {1, 1, 800, 1, 800, 800, 1, 800};
 static int check = 0;
-static bool optimizationFlag = false;
+static bool optimizationFlag = FALSE;
 
 Detector::Detector() {
     
